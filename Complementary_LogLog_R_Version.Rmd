@@ -1,0 +1,56 @@
+---
+title: "Complementary Log Log R Version"
+author: "Cory Suzuki"
+date: "2024-12-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(rcompanion)
+```
+
+```{r}
+#Import the data
+companies_data = read.csv(file="./Example3.1Data.csv", header=T, sep=",")
+
+#Specify reference categories
+ownership = as.factor(companies_data$ownership)
+approach = as.factor(companies_data$approach)
+ownership_rel = relevel(ownership, ref="partner")
+approach_rel = relevel(approach, ref="comp")
+```
+
+```{r}
+fitted_model = glm(approach_rel~ownership_rel+nemployees,
+                   data=companies_data, family=binomial(link=cloglog))
+summary(fitted_model)
+```
+
+```{r}
+p=4
+n=50
+AIC = -2*logLik(fitted_model)+2*p*n/(n-p-1)
+print(AIC)
+BIC(fitted_model)
+```
+
+```{r}
+intercept_only_mod = glm(approach_rel~1,
+                         family=binomial(link=cloglog))
+deviance = -2*(logLik(intercept_only_model)-logLik(fitted_model))
+print(deviance)
+```
+```{r}
+p_value = pchisq(deviance, df=3, lower.tail=F)
+print(p_value)
+```
+
+```{r}
+print(predict(fitted_model, type="response",
+              data.frame(ownership_rel="sole", nemployees=40)))
+```
