@@ -1,0 +1,55 @@
+---
+title: "Job Satisfaction R Version"
+author: "Cory Suzuki"
+date: "2024-12-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("rcompanion")
+library(rcompanion)
+library(readr)
+```
+
+```{r}
+job.satisfaction.data<- read.csv(file="./Example1.1Data.csv",
+ header=TRUE, sep=",")
+ #plotting histogram with fitted normal density
+ install.packages("rcompanion")
+ library(rcompanion)
+ plotNormalHistogram(job.satisfaction.data$score)
+ #testing normality of distribution
+ shapiro.test(job.satisfaction.data$score)
+```
+
+```{r}
+#specifying reference levels
+job.satisfaction.data$educ = factor(job.satisfaction.data$educ)
+ educ.rel<- relevel(job.satisfaction.data$educ, ref="master")
+ #fitting general linear model
+ summary(fitted.model<- glm(score ~ gender + age + educ.rel,
+ data=job.satisfaction.data, family=gaussian(link=identity)))
+```
+ 
+```{r}
+#outputting estimated sigma
+ dispersion = sum(residuals(fitted.model, type="pearson")^2) / df.residual(fitted.model)
+print(sqrt(dispersion))
+#checking model fit
+ intercept.only.model<- glm(score ~ 1,
+ data=job.satisfaction.data,family=gaussian
+ (link=identity))
+ print(deviance<--2*
+ (logLik(intercept.only.model)-logLik(fitted.model)))
+```
+
+```{r}
+print(p.value<- pchisq(deviance, df=4, lower.tail=FALSE))
+#using fitted model for prediction
+ print(predict(fitted.model, data.frame(gender="F", age=40,
+ educ.rel="bachelor")))
+```
