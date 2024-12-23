@@ -1,0 +1,52 @@
+---
+title: "Gamma Regression GLM"
+author: "Cory Suzuki"
+date: "2024-12-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(rcompanion)
+library(MASS)
+```
+
+```{r}
+real_estate = read.csv("./Example2.1Data.csv", header=T, sep=",")
+
+#rescale variables and specify reference categories
+real_estate$heating = as.factor(real_estate$heating)
+real_estate$AC = as.factor(real_estate$AC)
+price10K = real_estate$price/10000
+sqftK = real_estate$sqft/1000
+heating_rel = relevel(real_estate$heating, ref="none")
+AC_rel = relevel(real_estate$AC, ref="no")
+lotK = real_estate$lot/1000
+```
+
+```{r}
+fitted_model = glm(price10K~beds+baths+sqftK+heating_rel+AC_rel+lotK,
+                   data=real_estate, family=Gamma(link=log))
+summary(fitted_model)
+```
+
+```{r}
+intercept_only_model = glm(price10K~1, family=Gamma(link=log))
+deviance = -2*(logLik(intercept_only_model)-logLik(fitted_model))
+print(deviance)
+```
+
+```{r}
+p_value = pchisq(deviance, df=7, lower.tail=F)
+print(p_value)
+```
+```{r}
+print(10000*predict(fitted_model, type="response",
+                    data.frame(beds=4, baths=2, sqftK=1.68,
+                               heating_rel="central",
+                               AC_rel="no", lotK=5)))
+```
