@@ -1,0 +1,81 @@
+---
+title: "Box Cox GLM R Version"
+author: "Cory Suzuki"
+date: "2024-12-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(rcompanion)
+library(MASS)
+```
+
+```{r}
+real_estate = read.csv("./Example2.1Data.csv", header=T, sep=",")
+
+#rescale variables and specify reference categories
+real_estate$heating = as.factor(real_estate$heating)
+real_estate$AC = as.factor(real_estate$AC)
+price10K = real_estate$price/10000
+sqftK = real_estate$sqft/1000
+heating_rel = relevel(real_estate$heating, ref="none")
+AC_rel = relevel(real_estate$AC, ref="no")
+lotK = real_estate$lot/1000
+
+#plot histogram with normal density superimposed
+plotNormalHistogram(price10K)
+
+#testing for normality
+shapiro.test(price10K)
+
+```
+```{r}
+BoxCox_fit = boxcox(price10K~beds+baths+sqftK+heating_rel+AC_rel+lotK,
+                    data=real_estate,
+                    lambda= seq(-3,3,1/4), interp=F)
+BoxCox_data = data.frame(BoxCox_fit$x, BoxCox_fit$y)
+ordered_data = BoxCox_data[with(BoxCox_data, order(-BoxCox_fit.y)),]
+ordered_data[1,]
+
+#applying optimal lambda from boxcox to GLM
+tr.price10K = 1-(1/price10K)
+plotNormalHistogram(tr.price10K)
+shapiro.test(tr.price10K)
+```
+
+```{r}
+fitted_model = glm(tr.price10K~beds+baths+sqftK+heating_rel+AC_rel+lotK,
+                   data=real_estate, family=gaussian(link=identity))
+summary(fitted_model)
+```
+
+```{r}
+#Output the estimated standard deviation
+dispersion = sum(residuals(fitted_model, type="pearson")^2) / df.residual(fitted_model)
+print(sqrt(dispersion))
+```
+```{r}
+#Checking model fit
+intercept_only_mod = glm(tr.price10K~1, family=gaussian(link=identity))
+deviance = -2*(logLik(intercept_only_mod)-logLik(fitted_model))
+print(deviance)
+```
+```{r}
+#Print pvalue
+p_value = pchisq(deviance, df=7, lower.tail=F)
+print(p_value)
+```
+```{r}
+pred_tr_price10K = predict(fitted_model, data.frame(beds=4, baths=2,
+                                                    sqftK=1.68,
+                                                    heating_rel="central",
+                                                    AC_rel="no",
+                                                    lotK=5))
+pred_price = 10000/(1-pred_tr_price10K)
+print(pred_price)
+```
