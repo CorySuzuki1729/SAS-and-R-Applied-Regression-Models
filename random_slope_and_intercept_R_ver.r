@@ -15,7 +15,7 @@ variable.name="LDLmonth", value.name="LDL")
 
 #creating numeric variable for time
 month = ifelse(longform_data$LDLmonth=="LDL0", 0,
-iflese(longform_data$LDLmonth=="LDL6", 6, 
+ifelse(longform_data$LDLmonth=="LDL6", 6, 
 ifelse(longform_data$LDLmonth=="LDL9", 9, 24)))
 
 #plotting histogram with fitted normal density
